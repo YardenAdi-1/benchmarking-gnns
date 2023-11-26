@@ -14,8 +14,9 @@ from dgl.nn.pytorch import GraphConv
     
 # Sends a message of node feature h
 # Equivalent to => return {'m': edges.src['h']}
-msg = fn.copy_src(src='h', out='m')
+msg = fn.copy_u('h', 'm')
 reduce = fn.mean('m', 'h')
+
 
 class NodeApplyModule(nn.Module):
     # Update node feature h_v with (Wh_v+b)
@@ -52,7 +53,6 @@ class GCNLayer(nn.Module):
         else:
             self.conv = GraphConv(in_dim, out_dim, allow_zero_in_degree=True)
 
-        
     def forward(self, g, feature):
         h_in = feature   # to be used for residual connection
 

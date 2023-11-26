@@ -1,8 +1,3 @@
-
-
-
-
-
 """
     IMPORTING LIBS
 """
@@ -27,23 +22,19 @@ from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
+
 class DotDict(dict):
     def __init__(self, **kwds):
         self.update(kwds)
         self.__dict__ = self
 
 
-
-
-
-
 """
     IMPORTING CUSTOM MODULES/METHODS
 """
-from nets.molecules_graph_regression.load_net import gnn_model # import all GNNS
-from data.data import LoadData # import dataset
 
-
+from nets.molecules_graph_regression.load_net import gnn_model  # import all GNNS
+from data.data import LoadData  # import dataset
 
 
 """
@@ -54,20 +45,12 @@ def gpu_setup(use_gpu, gpu_id):
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)  
 
     if torch.cuda.is_available() and use_gpu:
-        print('cuda available with GPU:',torch.cuda.get_device_name(0))
+        print('cuda available with GPU:', torch.cuda.get_device_name(0))
         device = torch.device("cuda")
     else:
         print('cuda not available')
         device = torch.device("cpu")
     return device
-
-
-
-
-
-
-
-
 
 
 """
@@ -249,15 +232,10 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
                   test_mae, train_mae, epoch, (time.time()-t0)/3600, np.mean(per_epoch_time)))
         
 
-
-
-
 def main():    
     """
         USER CONTROLS
     """
-    
-    
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', help="Please give a config.json file with training/model/data/param details")
     parser.add_argument('--gpu_id', help="Please give a value for gpu id")
@@ -429,14 +407,9 @@ def main():
     net_params['total_param'] = view_model_param(MODEL_NAME, net_params)
     train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs)
 
-    
-    
-    
-    
-    
-    
-    
-main()    
+
+main()
+
 
 
 

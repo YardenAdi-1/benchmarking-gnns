@@ -17,9 +17,6 @@ import torch.nn.functional as F
 # The dataset pickle and index files are in ./zinc_molecules/ dir
 # [<split>.pickle and <split>.index; for split 'train', 'val' and 'test']
 
-
-
-
 class MoleculeDGL(torch.utils.data.Dataset):
     def __init__(self, data_dir, split, num_graphs=None):
         self.data_dir = data_dir
@@ -33,9 +30,9 @@ class MoleculeDGL(torch.utils.data.Dataset):
             # loading the sampled indices from file ./zinc_molecules/<split>.index
             with open(data_dir + "/%s.index" % self.split,"r") as f:
                 data_idx = [list(map(int, idx)) for idx in csv.reader(f)]
-                self.data = [ self.data[i] for i in data_idx[0] ]
+                self.data = [self.data[i] for i in data_idx[0]]
 
-            assert len(self.data)==num_graphs, "Sample num_graphs again; available idx: train/val/test => 10k/1k/1k"
+            assert len(self.data) == num_graphs, "Sample num_graphs again; available idx: train/val/test => 10k/1k/1k"
         
         """
         data is a list of Molecule dict objects with following attributes
@@ -119,7 +116,7 @@ class MoleculeAqSolDGL(torch.utils.data.Dataset):
     def _prepare(self):
         print("preparing %d graphs for the %s set..." % (self.num_graphs, self.split.upper()))
         
-        count_filter1, count_filter2 = 0,0
+        count_filter1, count_filter2 = 0, 0
         
         for molecule in self.data:
             node_features = torch.LongTensor(molecule[0])
@@ -137,7 +134,7 @@ class MoleculeAqSolDGL(torch.utils.data.Dataset):
                 continue # cleaning <10 graphs with this discrepancy
             
             
-            g.edata['feat'] = edge_features    
+            g.edata['feat'] = edge_features
             g.ndata['feat'] = node_features
            
             self.graph_lists.append(g)
@@ -159,16 +156,16 @@ class MoleculeDatasetDGL(torch.utils.data.Dataset):
         self.name = name
         
         if self.name == 'AqSol':
-            self.num_atom_type = 65 # known meta-info about the AqSol dataset; can be calculated as well 
-            self.num_bond_type = 5 # known meta-info about the AqSol dataset; can be calculated as well
+            self.num_atom_type = 65  # known meta-info about the AqSol dataset; can be calculated as well
+            self.num_bond_type = 5  # known meta-info about the AqSol dataset; can be calculated as well
         else:            
-            self.num_atom_type = 28 # known meta-info about the zinc dataset; can be calculated as well
-            self.num_bond_type = 4 # known meta-info about the zinc dataset; can be calculated as well
+            self.num_atom_type = 28  # known meta-info about the zinc dataset; can be calculated as well
+            self.num_bond_type = 4  # known meta-info about the zinc dataset; can be calculated as well
         
-        data_dir='./data/molecules'
+        data_dir = './data/molecules'
         
         if self.name == 'ZINC-full':
-            data_dir='./data/molecules/zinc_full'
+            data_dir = './data/molecules/zinc_full'
             self.train = MoleculeDGL(data_dir, 'train', num_graphs=220011)
             self.val = MoleculeDGL(data_dir, 'val', num_graphs=24445)
             self.test = MoleculeDGL(data_dir, 'test', num_graphs=5000)
@@ -177,13 +174,12 @@ class MoleculeDatasetDGL(torch.utils.data.Dataset):
             self.val = MoleculeDGL(data_dir, 'val', num_graphs=1000)
             self.test = MoleculeDGL(data_dir, 'test', num_graphs=1000)
         elif self.name == 'AqSol': 
-            data_dir='./data/molecules/asqol_graph_raw'
+            data_dir = './data/molecules/asqol_graph_raw'
             self.train = MoleculeAqSolDGL(data_dir, 'train', num_graphs=7985)
             self.val = MoleculeAqSolDGL(data_dir, 'val', num_graphs=998)
             self.test = MoleculeAqSolDGL(data_dir, 'test', num_graphs=999)
         print("Time taken: {:.4f}s".format(time.time()-t0))
         
-
 
 def self_loop(g):
     """
@@ -209,7 +205,6 @@ def self_loop(g):
     # However, we need this for the generic requirement of ndata and edata
     new_g.edata['feat'] = torch.zeros(new_g.number_of_edges())
     return new_g
-
 
 
 def positional_encoding(g, pos_enc_dim):
@@ -240,7 +235,6 @@ def positional_encoding(g, pos_enc_dim):
     return g
 
 
-
 class MoleculeDataset(torch.utils.data.Dataset):
 
     def __init__(self, name):
@@ -251,14 +245,14 @@ class MoleculeDataset(torch.utils.data.Dataset):
         print("[I] Loading dataset %s..." % (name))
         self.name = name
         data_dir = 'data/molecules/'
-        with open(data_dir+name+'.pkl',"rb") as f:
+        with open(data_dir+name+'.pkl', "rb") as f:
             f = pickle.load(f)
             self.train = f[0]
             self.val = f[1]
             self.test = f[2]
             self.num_atom_type = f[3]
             self.num_bond_type = f[4]
-        print('train, test, val sizes :',len(self.train),len(self.test),len(self.val))
+        print('train, test, val sizes :', len(self.train), len(self.test), len(self.val))
         print("[I] Finished loading.")
         print("[I] Data load time: {:.4f}s".format(time.time()-start))
 
@@ -267,7 +261,8 @@ class MoleculeDataset(torch.utils.data.Dataset):
     def collate(self, samples):
         # The input samples is a list of pairs (graph, label).
         graphs, labels = map(list, zip(*samples))
-        labels = torch.tensor(np.array(labels)).unsqueeze(1)
+        # labels = torch.tensor(np.array(labels)).unsqueeze(1)
+        labels = torch.tensor(labels).unsqueeze(1)
         #tab_sizes_n = [ graphs[i].number_of_nodes() for i in range(len(graphs))]
         #tab_snorm_n = [ torch.FloatTensor(size,1).fill_(1./float(size)) for size in tab_sizes_n ]
         #snorm_n = torch.cat(tab_snorm_n).sqrt()  

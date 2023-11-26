@@ -58,13 +58,13 @@ class GraphSageLayer(nn.Module):
             if self.aggregator_type == 'maxpool':
                 g.ndata['h'] = self.aggregator.linear(g.ndata['h'])
                 g.ndata['h'] = self.aggregator.activation(g.ndata['h'])
-                g.update_all(fn.copy_src('h', 'm'), fn.max('m', 'c'), self.nodeapply)
+                g.update_all(fn.copy_u('h', 'm'), fn.max('m', 'c'), self.nodeapply)
             elif self.aggregator_type == 'lstm':
-                g.update_all(fn.copy_src(src='h', out='m'), 
+                g.update_all(fn.copy_u(src='h', out='m'),
                              self.aggregator,
                              self.nodeapply)
             else:
-                g.update_all(fn.copy_src('h', 'm'), fn.mean('m', 'c'), self.nodeapply)
+                g.update_all(fn.copy_u('h', 'm'), fn.mean('m', 'c'), self.nodeapply)
             h = g.ndata['h']
         else:
             h = self.sageconv(g, h)
