@@ -127,11 +127,11 @@ class MoleculeAqSolDGL(torch.utils.data.Dataset):
                         
             if g.num_nodes() == 0:
                 count_filter1 += 1
-                continue # skipping graphs with no bonds/edges
+                continue  # skipping graphs with no bonds/edges
             
             if g.num_nodes() != len(node_features):
                 count_filter2 += 1
-                continue # cleaning <10 graphs with this discrepancy
+                continue  # cleaning <10 graphs with this discrepancy
             
             
             g.edata['feat'] = edge_features
@@ -219,9 +219,9 @@ def positional_encoding(g, pos_enc_dim):
 
     # Eigenvectors with numpy
     EigVal, EigVec = np.linalg.eig(L.toarray())
-    idx = EigVal.argsort() # increasing order
-    EigVal, EigVec = EigVal[idx], np.real(EigVec[:,idx])
-    g.ndata['pos_enc'] = torch.from_numpy(EigVec[:,1:pos_enc_dim+1]).float() 
+    idx = EigVal.argsort()  # increasing order
+    EigVal, EigVec = EigVal[idx], np.real(EigVec[:, idx])
+    g.ndata['pos_enc'] = torch.from_numpy(EigVec[:, 1:pos_enc_dim + 1]).float()
 
     # # Eigenvectors with scipy
     # EigVal, EigVec = sp.linalg.eigs(L, k=pos_enc_dim+1, which='SR')

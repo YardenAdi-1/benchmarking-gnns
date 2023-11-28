@@ -6,6 +6,8 @@ import dgl
 import dgl.function as fn
 from dgl.nn.pytorch import GraphConv
 
+from layers.aggregators import ConvAggregator
+
 """
     GCN: Graph Convolutional Networks
     Thomas N. Kipf, Max Welling, Semi-Supervised Classification with Graph Convolutional Networks (ICLR 2017)
@@ -28,6 +30,7 @@ class NodeApplyModule(nn.Module):
         h = self.linear(node.data['h'])
         return {'h': h}
 
+
 class GCNLayer(nn.Module):
     """
         Param: [in_dim, out_dim]
@@ -46,7 +49,7 @@ class GCNLayer(nn.Module):
         self.batchnorm_h = nn.BatchNorm1d(out_dim)
         self.activation = activation
         self.dropout = nn.Dropout(dropout)
-        if self.dgl_builtin == False:
+        if not self.dgl_builtin:
             self.apply_mod = NodeApplyModule(in_dim, out_dim)
         elif dgl.__version__ < "0.5":
             self.conv = GraphConv(in_dim, out_dim)
@@ -56,27 +59,72 @@ class GCNLayer(nn.Module):
     def forward(self, g, feature):
         h_in = feature   # to be used for residual connection
 
-        if self.dgl_builtin == False:
+        if not self.dgl_builtin:
             g.ndata['h'] = feature
             g.update_all(msg, reduce)
             g.apply_nodes(func=self.apply_mod)
-            h = g.ndata['h'] # result of graph convolution
+            h = g.ndata['h']  # result of graph convolution
         else:
             h = self.conv(g, feature)
         
         if self.batch_norm:
-            h = self.batchnorm_h(h) # batch normalization  
+            h = self.batchnorm_h(h)  # batch normalization
        
         if self.activation:
             h = self.activation(h)
         
         if self.residual:
-            h = h_in + h # residual connection
+            h = h_in + h  # residual connection
             
         h = self.dropout(h)
         return h
     
     def __repr__(self):
         return '{}(in_channels={}, out_channels={}, residual={})'.format(self.__class__.__name__,
-                                             self.in_channels,
-                                             self.out_channels, self.residual)
+                                                                         self.in_channels,
+                                                                         self.out_channels, self.residual)
+
+
+class ConvGCNLayer(nn.Module):
+    """
+        Param: [in_dim, out_dim]
+    """
+
+    def __init__(self, in_dim, out_dim, hidden_dim_1, hidden_dim_2, activation, dropout, batch_norm, residual=False):
+        super().__init__()
+        self.in_channels = in_dim
+        self.out_channels = out_dim
+        self.batch_norm = batch_norm
+        self.residual = residual
+
+        if in_dim != out_dim:
+            self.residual = False
+
+        self.batchnorm_h = nn.BatchNorm1d(out_dim)
+        self.activation = activation
+        self.dropout = nn.Dropout(dropout)
+
+        self.conv_aggr = ConvAggregator(in_dim=in_dim, hidden_dim_1=hidden_dim_1,
+                                        hidden_dim_2=hidden_dim_2, out_dim=out_dim)
+
+    def forward(self, g, feature):
+        h_in = feature  # to be used for residual connection
+
+        h = self.conv_aggr(g, feature)
+
+        if self.batch_norm:
+            h = self.batchnorm_h(h)  # batch normalization
+
+        if self.activation:
+            h = self.activation(h)
+
+        if self.residual:
+            h = h_in + h  # residual connection
+
+        h = self.dropout(h)
+        return h
+
+    def __repr__(self):
+        return '{}(in_channels={}, out_channels={}, residual={})'.format(self.__class__.__name__,
+                                                                         self.in_channels,
+                                                                         self.out_channels, self.residual)

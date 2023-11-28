@@ -13,10 +13,10 @@
         "seed": 41,
         "epochs": 1000,
         "batch_size": 128,
-        "init_lr": 0.001,
+        "init_lr": 0.0001,
         "lr_reduce_factor": 0.5,
         "lr_schedule_patience": 10,
-        "min_lr": 1e-5,
+        "min_lr": 1e-7,
         "weight_decay": 0.0,
         "print_epoch_interval": 5,
         "max_time": 12
@@ -31,6 +31,8 @@
         "in_feat_dropout": 0.0,
         "dropout": 0.0,
         "batch_norm": true,
-        "self_loop": false
+        "self_loop": false,
+        "hidden_dim_1": 12,
+        "hidden_dim_2": 12
     }
 }

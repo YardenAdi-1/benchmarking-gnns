@@ -1,3 +1,8 @@
+
+
+
+
+
 """
     IMPORTING LIBS
 """
@@ -22,17 +27,16 @@ from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
 
 class DotDict(dict):
     def __init__(self, **kwds):
         self.update(kwds)
         self.__dict__ = self
 
-
 """
     IMPORTING CUSTOM MODULES/METHODS
 """
-
 from nets.molecules_graph_regression.load_net import gnn_model  # import all GNNS
 from data.data import LoadData  # import dataset
 
@@ -71,7 +75,6 @@ def view_model_param(MODEL_NAME, net_params):
 """
     TRAINING CODE
 """
-
 def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     t0 = time.time()
     per_epoch_time = []
@@ -96,7 +99,8 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     
     # Write the network and optimization hyper-parameters in folder config/
     with open(write_config_file + '.txt', 'w') as f:
-        f.write("""Dataset: {},\nModel: {}\n\nparams={}\n\nnet_params={}\n\n\nTotal Parameters: {}\n\n"""                .format(DATASET_NAME, MODEL_NAME, params, net_params, net_params['total_param']))
+        f.write("""Dataset: {},\nModel: {}\n\nparams={}\n\nnet_params={}\n\n\nTotal Parameters: {}\n\n"""\
+                .format(DATASET_NAME, MODEL_NAME, params, net_params, net_params['total_param']))
         
     log_dir = os.path.join(root_log_dir, "RUN_" + str(0))
     writer = SummaryWriter(log_dir=log_dir)
@@ -153,7 +157,7 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
 
                 start = time.time()
 
-                if MODEL_NAME in ['RingGNN', '3WLGNN']: # since different batch training function for RingGNN
+                if MODEL_NAME in ['RingGNN', '3WLGNN']:  # since different batch training function for RingGNN
                     epoch_train_loss, epoch_train_mae, optimizer = train_epoch(model, optimizer, device, train_loader, epoch, params['batch_size'])
                 else:   # for all other models common train function
                     epoch_train_loss, epoch_train_mae, optimizer = train_epoch(model, optimizer, device, train_loader, epoch)
@@ -219,6 +223,14 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     print("TOTAL TIME TAKEN: {:.4f}s".format(time.time()-t0))
     print("AVG TIME PER EPOCH: {:.4f}s".format(np.mean(per_epoch_time)))
 
+    plt.plot(epoch_train_losses)
+    plt.title("train loss")
+    plt.show()
+
+    # plt.plot(epoch_val_losses)
+    # plt.title("val loss")
+    # plt.show()
+
     writer.close()
 
     """
@@ -230,12 +242,14 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     Convergence Time (Epochs): {:.4f}\nTotal Time Taken: {:.4f} hrs\nAverage Time Per Epoch: {:.4f} s\n\n\n"""\
           .format(DATASET_NAME, MODEL_NAME, params, net_params, model, net_params['total_param'],
                   test_mae, train_mae, epoch, (time.time()-t0)/3600, np.mean(per_epoch_time)))
-        
+
 
 def main():    
     """
         USER CONTROLS
     """
+    
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', help="Please give a config.json file with training/model/data/param details")
     parser.add_argument('--gpu_id', help="Please give a value for gpu id")
@@ -409,7 +423,6 @@ def main():
 
 
 main()
-
 
 
 

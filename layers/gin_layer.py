@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import dgl.function as fn
 
+from layers.aggregators import ConvAggregator
+
 """
     GIN: Graph Isomorphism Networks
     HOW POWERFUL ARE GRAPH NEURAL NETWORKS? (Keyulu Xu, Weihua Hu, Jure Leskovec and Stefanie Jegelka, ICLR 2019)
@@ -66,7 +68,7 @@ class GINLayer(nn.Module):
         self.bn_node_h = nn.BatchNorm1d(out_dim)
 
     def forward(self, g, h):
-        h_in = h # for residual connection
+        h_in = h  # for residual connection
         
         g = g.local_var()
         g.ndata['h'] = h
@@ -76,18 +78,69 @@ class GINLayer(nn.Module):
             h = self.apply_func(h)
 
         if self.batch_norm:
-            h = self.bn_node_h(h) # batch normalization  
+            h = self.bn_node_h(h)  # batch normalization
        
-        h = F.relu(h) # non-linear activation
+        h = F.relu(h)  # non-linear activation
         
         if self.residual:
-            h = h_in + h # residual connection
+            h = h_in + h  # residual connection
         
         h = F.dropout(h, self.dropout, training=self.training)
         
         return h
-    
-    
+
+
+class ConvGINLayer(nn.Module):
+    def __init__(self, apply_func, hidden_dim_1, hidden_dim_2, dropout, batch_norm, residual=False, init_eps=0, learn_eps=False):
+        super().__init__()
+        self.apply_func = apply_func
+
+        self.batch_norm = batch_norm
+        self.residual = residual
+        self.dropout = dropout
+
+        in_dim = apply_func.mlp.input_dim
+        out_dim = apply_func.mlp.output_dim
+
+        if in_dim != out_dim:
+            self.residual = False
+
+        # to specify whether eps is trainable or not.
+        if learn_eps:
+            self.eps = torch.nn.Parameter(torch.FloatTensor([init_eps]))
+        else:
+            self.register_buffer('eps', torch.FloatTensor([init_eps]))
+
+        self.bn_node_h = nn.BatchNorm1d(out_dim)
+
+        self.conv_aggr = ConvAggregator(in_dim=in_dim, hidden_dim_1=hidden_dim_1,
+                                        hidden_dim_2=hidden_dim_2, out_dim=out_dim)
+
+    def forward(self, g, feature):
+        h_in = feature  # for residual connection
+
+        g = g.local_var()
+
+        h = self.conv_aggr(g, feature)
+
+        # h = (1 + self.eps) * h + feature
+
+        if self.apply_func is not None:
+            h = self.apply_func(h)
+
+        if self.batch_norm:
+            h = self.bn_node_h(h)  # batch normalization
+
+        h = F.relu(h)  # non-linear activation
+
+        if self.residual:
+            h = h_in + h  # residual connection
+
+        h = F.dropout(h, self.dropout, training=self.training)
+
+        return h
+
+
 class ApplyNodeFunc(nn.Module):
     """
         This class is used in class GINNet

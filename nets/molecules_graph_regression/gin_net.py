@@ -11,7 +11,7 @@ from dgl.nn.pytorch.glob import SumPooling, AvgPooling, MaxPooling
     https://arxiv.org/pdf/1810.00826.pdf
 """
 
-from layers.gin_layer import GINLayer, ApplyNodeFunc, MLP
+from layers.gin_layer import GINLayer, ApplyNodeFunc, MLP, ConvGINLayer
 
 class GINNet(nn.Module):
     
@@ -19,6 +19,8 @@ class GINNet(nn.Module):
         super().__init__()
         num_atom_type = net_params['num_atom_type']
         hidden_dim = net_params['hidden_dim']
+        hidden_dim_1 = net_params['hidden_dim_1']
+        hidden_dim_2 = net_params['hidden_dim_2']
         dropout = net_params['dropout']
         self.n_layers = net_params['L']
         n_mlp_layers = net_params['n_mlp_GIN']               # GIN
@@ -36,7 +38,7 @@ class GINNet(nn.Module):
         for layer in range(self.n_layers):
             mlp = MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim)
             
-            self.ginlayers.append(GINLayer(ApplyNodeFunc(mlp), neighbor_aggr_type,
+            self.ginlayers.append(ConvGINLayer(ApplyNodeFunc(mlp), hidden_dim_1, hidden_dim_2,
                                            dropout, batch_norm, residual, 0, learn_eps))
 
         # Linear function for graph poolings (readout) of output of each layer
